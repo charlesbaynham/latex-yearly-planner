@@ -51,6 +51,14 @@
               ;
           })
         ];
+
+        theYear = pkgs.stdenv.mkDerivation {
+          name = "current-year";
+          buildInputs = [ pkgs.coreutils ];
+          buildCommand = ''
+            date -d now +%Y > $out
+          '';
+        };
       in
       rec
       {
@@ -65,22 +73,24 @@
           ] ++ goDeps ++ texDeps;
         };
 
-        defaultPackage = pdfs;
+        defaultPackage = packages.pdfs;
 
-        pdfs = pkgs.stdenv.mkDerivation
+	packages.year = theYear;
+
+        packages.pdfs = pkgs.stdenv.mkDerivation
           {
             name = "pdfs";
             # Minimal set of dependencies to build the pdfs
             # Latex, "rev" and the built plannergen binary
             buildInputs = texDeps ++ [ plannergen ];
-            PLANNER_YEAR = 2023;
+            PLANNER_YEAR = builtins.readFile theYear;
             src = "${self}";
             buildCommand = ''
               cp -r $src/* .
               patchShebangs .
               chmod -R 770 *
               chmod +x *.sh
-              PLANNERGEN_BINARY=plannergen eval $PWD/build.sh
+              PLANNERGEN_BINARY=plannergen eval $PWD/build.sh $PLANNER_YEAR
               mkdir $out
               cp *.pdf $out/.
             '';
