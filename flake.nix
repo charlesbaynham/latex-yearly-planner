@@ -52,13 +52,6 @@
           })
         ];
 
-        theYear = pkgs.stdenv.mkDerivation {
-          name = "current-year";
-          buildInputs = [ pkgs.coreutils ];
-          buildCommand = ''
-            date -d now +%Y > $out
-          '';
-        };
       in
       rec
       {
@@ -73,29 +66,48 @@
           ] ++ goDeps ++ texDeps;
         };
 
-        defaultPackage = packages.pdfs;
+        defaultPackage = packages.pdf-current;
 
-	packages.year = theYear;
+        packages =
+          let
+            # This current year
+            theYear = builtins.readFile (
+              pkgs.stdenv.mkDerivation {
+                name = "current-year";
+                buildInputs = [ pkgs.coreutils ];
+                buildCommand = ''
+                  date -d now +%Y > $out
+                '';
+              });
 
-        packages.pdfs = pkgs.stdenv.mkDerivation
-          {
-            name = "pdfs";
-            # Minimal set of dependencies to build the pdfs
-            # Latex, "rev" and the built plannergen binary
-            buildInputs = texDeps ++ [ plannergen ];
-            PLANNER_YEAR = builtins.readFile theYear;
-            src = "${self}";
-            buildCommand = ''
-              cp -r $src/* .
-              patchShebangs .
-              chmod -R 770 *
-              chmod +x *.sh
-              PLANNERGEN_BINARY=plannergen eval $PWD/build.sh $PLANNER_YEAR
-              mkdir $out
-              cp *.pdf $out/.
-            '';
+            # List of years to always build
+            build-years = [ "2025" "2026" "2027" "2028" "2029" "2030" ];
+
+            # Function that, given a year, builds a pdf for it
+            mkPDF = year: pkgs.stdenv.mkDerivation
+              {
+                name = "pdfs";
+                # Minimal set of dependencies to build the pdfs:
+                # Latex and the built plannergen binary
+                buildInputs = texDeps ++ [ plannergen ];
+                src = "${self}";
+                buildCommand = ''
+                  cp -r $src/* .
+                  patchShebangs .
+                  chmod -R 770 *
+                  chmod +x *.sh
+                  PLANNERGEN_BINARY=plannergen eval $PWD/build.sh ${year}
+                  mkdir $out
+                  cp *.pdf $out/.
+                '';
+              };
+
+            list-of-pdfs = map (y: { name = "pdf-${y}"; value = mkPDF y; }) build-years;
+          in
+          builtins.listToAttrs list-of-pdfs
+          // {
+            pdf-current = mkPDF theYear;
           };
-
       }
     );
 }
