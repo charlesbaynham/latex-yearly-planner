@@ -121,7 +121,7 @@
               name = "all-pdfs";
               buildCommand = ''
                 mkdir $out
-                cp -r ${builtins.concatStringsSep " " (map (x: x.value) list-of-pdfs)}/* $out/.
+                cp -r ${builtins.concatStringsSep " " (map (x: "${x.value}/*" ) list-of-pdfs)} $out/.
               '';
             };
           };
