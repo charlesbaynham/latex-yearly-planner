@@ -84,10 +84,10 @@
             build-years = [
               "2025"
               "2026"
-              # "2027"
-              # "2028"
-              # "2029"
-              # "2030"
+              "2027"
+              "2028"
+              "2029"
+              "2030"
             ];
 
             # Function that, given a year, builds a pdf for it
