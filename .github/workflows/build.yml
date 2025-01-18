@@ -1,4 +1,4 @@
-name: "Build 2023"
+name: "Build all PDFs"
 on:
   pull_request:
   push:
@@ -6,16 +6,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v19
-    - name: Build PDFs
-      run: nix build
-    - name: Copy PDFs
-      run: cp result/*.pdf .
-    - name: Output PDFs
-      uses: actions/upload-artifact@v3
-      with:
-        name: result
-        path: ./*.pdf
-        if-no-files-found: error
-
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v19
+      - name: Build PDFs
+        run: nix build .#pdf-all
+      - name: Copy PDFs
+        run: cp result/*.pdf .
+      - name: Output PDFs
+        uses: actions/upload-artifact@v3
+        with:
+          name: result
+          path: ./*.pdf
+          if-no-files-found: error

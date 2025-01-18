@@ -70,8 +70,8 @@
 
         packages =
           let
-            # This current year
-            nextYear = builtins.readFile (
+            # Next year, as a string
+            next-year = builtins.readFile (
               pkgs.stdenv.mkDerivation {
                 name = "current-year";
                 buildInputs = [ pkgs.coreutils ];
@@ -81,10 +81,17 @@
               });
 
             # List of years to always build
-            build-years = [ "2025" "2026" "2027" "2028" "2029" "2030" ];
+            build-years = [
+              "2025"
+              "2026"
+              # "2027"
+              # "2028"
+              # "2029"
+              # "2030"
+            ];
 
             # Function that, given a year, builds a pdf for it
-            mkPDF = year: pkgs.stdenv.mkDerivation
+            make-PDF = year: pkgs.stdenv.mkDerivation
               {
                 name = "pdfs";
                 # Minimal set of dependencies to build the pdfs:
@@ -102,12 +109,21 @@
                 '';
               };
 
-            list-of-pdfs = map (y: { name = "pdf-${y}"; value = mkPDF y; }) build-years;
+            list-of-pdfs = map (y: { name = "pdf-${y}"; value = make-PDF y; }) build-years;
           in
           builtins.listToAttrs list-of-pdfs
           // {
             # Append next year's pdf which is the default output
-            pdf-next = mkPDF nextYear;
+            pdf-next = make-PDF next-year;
+
+            # Also output all pdfs in the same derivation for the GitHub action
+            pdf-all = pkgs.stdenv.mkDerivation {
+              name = "all-pdfs";
+              buildCommand = ''
+                mkdir $out
+                cp -r ${builtins.concatStringsSep " " (map (x: x.value) list-of-pdfs)}/* $out/.
+              '';
+            };
           };
       }
     );
