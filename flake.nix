@@ -66,17 +66,17 @@
           ] ++ goDeps ++ texDeps;
         };
 
-        defaultPackage = packages.pdf-current;
+        defaultPackage = packages.pdf-next;
 
         packages =
           let
             # This current year
-            theYear = builtins.readFile (
+            nextYear = builtins.readFile (
               pkgs.stdenv.mkDerivation {
                 name = "current-year";
                 buildInputs = [ pkgs.coreutils ];
                 buildCommand = ''
-                  date -d now +%Y > $out
+                  date -d "+1 year" +%Y > $out
                 '';
               });
 
@@ -106,7 +106,8 @@
           in
           builtins.listToAttrs list-of-pdfs
           // {
-            pdf-current = mkPDF theYear;
+            # Append next year's pdf which is the default output
+            pdf-next = mkPDF nextYear;
           };
       }
     );
